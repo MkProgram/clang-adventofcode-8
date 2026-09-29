@@ -1,0 +1,10 @@
+build/*
+!build/.gitkeep
+*.o
+*.dSYM/
+*.gcda
+*.gcno
+*.gcov
+.DS_Store
+.cache
+compile_commands.json
