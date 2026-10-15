@@ -3,5 +3,7 @@
 
 #include <stddef.h>
 void *checked_realloc(void *prt, size_t size);
+void *checked_malloc(size_t size);
+void *checked_calloc(size_t num, size_t size);
 
 #endif // ! XMALLOC_H
