@@ -33,9 +33,9 @@ void find_closest_point(Coordinates *loc, size_t current_index, Vec *loc_list,
       *closest = current;
     }
   }
-  printf("Closest point to (%d, %d, %d) is (%d, %d, %d) with distance %d\n",
-         loc->x, loc->y, loc->z, closest->x, closest->y, closest->z,
-         lowest_distance);
+  // printf("Closest point to (%d, %d, %d) is (%d, %d, %d) with distance %d\n",
+  //       loc->x, loc->y, loc->z, closest->x, closest->y, closest->z,
+  //        lowest_distance);
 }
 
 size_t assemble_circuit(FILE *file) {

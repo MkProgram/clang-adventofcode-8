@@ -3,61 +3,61 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+struct get_values {
+  size_t key;
+  size_t value;
+  bool found;
+};
+
+bool check_get(const hash_map *map, size_t key, size_t expected_val,
+               bool expected_return) {
+  size_t actual = 999;
+  bool found = map_get(map, key, &actual);
+
+  if (found != expected_return) {
+    fprintf(stderr,
+            "FAILURE: Expected result of getting a value of key %zu is %s, was "
+            "%s\n",
+            key, expected_return == true ? "true" : "false",
+            found == true ? "true" : "false");
+    return false;
+  }
+  if (found && actual != expected_val) {
+    fprintf(stderr, "FAILURE: Expected value of key %zu is %zu, was %zu\n", key,
+            expected_val, actual);
+    return false;
+  }
+  if (!found && actual != 999) {
+    fprintf(stderr,
+            "FAILURE: No value was found but output value was modified anyway. "
+            "Key %zu\n",
+            key);
+    return false;
+  }
+
+  return true;
+}
+
 size_t test_map_get(void) {
   hash_map map = {0};
   map_init(&map);
 
-  size_t v1 = 5;
-  size_t v2 = 16;
-  size_t v3 = 12;
+  // First three values are used to fill the slots, the ones after are used to
+  // test behaviour for calling empty keys
+  struct get_values values[] = {{3, 5, true},   {7, 16, true}, {11, 12, true},
+                                {12, 0, false}, {2, 0, false}, {0, 0, false}};
 
-  map.slots[3] = (hash_slot){3, v1, true};
-  map.slots[0] = (hash_slot){7, v2, true};
-  map.slots[1] = (hash_slot){11, v3, true};
+  size_t slots[] = {3, 0, 1};
 
-  size_t t1 = 0;
-  size_t t2 = 0;
-  size_t t3 = 0;
-
-  bool valid = map_get(&map, 3, &t1);
-
-  if (!valid) {
-    fprintf(stderr, "FAILURE: Failed to find key %d\n", 5);
-    return 1;
+  for (size_t i = 0; i < sizeof slots / sizeof slots[0]; ++i) {
+    map.slots[slots[i]] = (hash_slot){values[i].key, values[i].value, true};
   }
 
-  if (t1 != v1) {
-    fprintf(stderr, "FAILURE: Expected %zu, got %zu\n", v1, t1);
-    return 1;
-  }
-
-  valid = map_get(&map, 7, &t2);
-
-  if (!valid) {
-    fprintf(stderr, "FAILURE: Failed to find key %d\n", 9);
-    return 1;
-  }
-
-  if (t2 != v2) {
-    fprintf(stderr, "FAILURE: Expected %zu, got %zu\n", v2, t2);
-    return 1;
-  }
-
-  valid = map_get(&map, 11, &t3);
-  if (!valid) {
-    fprintf(stderr, "FAILURE: Failed to find key %d\n", 9);
-    return 1;
-  }
-  if (t3 != v3) {
-    fprintf(stderr, "FAILURE: Expected %zu, got %zu\n", v3, t3);
-    return 1;
-  }
-  size_t t4 = 0;
-  valid = map_get(&map, 12, &t4);
-  if (valid) {
-    fprintf(stderr, "FAILURE: Found a key, that is not set in the map %d\n",
-            12);
-    return 1;
+  for (size_t i = 0; i < sizeof values / sizeof values[0]; ++i) {
+    if (!check_get(&map, values[i].key, values[i].value, values[i].found)) {
+      map_free(&map);
+      return 1;
+    }
   }
 
   map_free(&map);

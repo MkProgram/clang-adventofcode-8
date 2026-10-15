@@ -1,5 +1,6 @@
 #include "hashmap.h"
 #include "xmalloc.h"
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -31,6 +32,36 @@ bool map_get(const hash_map *map, size_t key, size_t *out) {
     }
   }
   return false;
+}
+
+void map_put(hash_map *map, size_t key, size_t value) {
+  hash_slot slot = (hash_slot){key, value, true};
+
+  size_t target = key % map->capacity;
+
+  if (!map->slots[target].occupied) {
+    map->slots[target] = slot;
+    ++map->count;
+    return;
+  }
+
+  if (key == map->slots[target].key) {
+    map->slots[target].value = value;
+  }
+
+  for (size_t i = 0; i < map->capacity; ++i) {
+    target = (target + i) % map->capacity;
+    if (!map->slots[target].occupied) {
+      map->slots[target] = slot;
+      ++map->count;
+      return;
+    }
+    if (key == map->slots[target].key) {
+      map->slots[target].value = value;
+      return;
+    }
+  }
+  assert("No slots available" && true);
 }
 
 void map_free(hash_map *map) {

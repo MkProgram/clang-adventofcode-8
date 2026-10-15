@@ -19,13 +19,15 @@ size_t test_vec(void) {
 
     vec_init(&v, sizeof current.value);
     vec_push(&v, current.value);
-    char *actual = NULL;
+    const char *actual = NULL;
     vec_get(&v, 0, &actual);
-    if (actual == NULL || actual != current.value) {
-      fprintf(stderr, "FAILURE: %s: Expected value does not match the return.",
+    if (actual == NULL || actual != char_val) {
+      fprintf(stderr,
+              "FAILURE: %s: Expected value does not match the return.\n",
               current.name);
       ++failures;
     }
+    vec_free(&v);
   }
   return failures;
 }
@@ -35,7 +37,7 @@ int main(void) {
 
   failures += test_vec();
   if (failures == 0) {
-    return EXIT_FAILURE;
+    return EXIT_SUCCESS;
   }
 
   return EXIT_FAILURE;
