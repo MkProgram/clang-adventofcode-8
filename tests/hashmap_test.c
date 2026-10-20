@@ -8,6 +8,12 @@ struct get_values {
   size_t value;
   bool found;
 };
+struct put_values {
+  size_t key;
+  size_t value;
+  size_t expected_slot;
+  size_t expected_count;
+};
 
 bool check_get(const hash_map *map, size_t key, size_t expected_val,
                bool expected_return) {
@@ -36,6 +42,58 @@ bool check_get(const hash_map *map, size_t key, size_t expected_val,
   }
 
   return true;
+}
+
+size_t test_put(void) {
+  hash_map map = {0};
+  map_init(&map);
+  struct put_values values[] = {
+      {1, 12, 1, 1},
+      {5, 15, 2, 2},
+      {9, 19, 3, 3},
+      {1, 99, 1, 3},
+  };
+
+  for (size_t i = 0; i < sizeof values / sizeof values[0]; ++i) {
+    struct put_values current = values[i];
+    map_put(&map, current.key, current.value);
+
+    if (map.slots[current.expected_slot].value != current.value ||
+        map.slots[current.expected_slot].key != current.key ||
+        map.count != current.expected_count) {
+      fprintf(
+          stderr,
+          "FAILURE: Expected value in slot %zu to match key %zu and value "
+          "%zu with a count of %zu, got key %zu and value %zu with count %zu\n",
+          current.expected_slot, current.key, current.value,
+          current.expected_count, map.slots[current.expected_slot].key,
+          map.slots[current.expected_slot].value, map.count);
+      map_free(&map);
+      return 1;
+    }
+    if (!check_get(&map, current.key, current.value, true)) {
+      map_free(&map);
+      return 1;
+    }
+  }
+
+  struct get_case {
+    size_t key;
+    size_t value;
+  };
+  struct get_case cases[] = {{1, 99}, {5, 15}, {9, 19}};
+
+  for (size_t i = 0; i < sizeof cases / sizeof cases[0]; ++i) {
+    struct get_case current = cases[i];
+    if (!check_get(&map, current.key, current.value, true)) {
+      map_free(&map);
+      return 1;
+    }
+  }
+
+  map_free(&map);
+
+  return 0;
 }
 
 size_t test_map_get(void) {
@@ -68,6 +126,7 @@ int main(void) {
   size_t failures = 0;
 
   failures += test_map_get();
+  failures += test_put();
 
   if (failures == 0) {
     return EXIT_SUCCESS;

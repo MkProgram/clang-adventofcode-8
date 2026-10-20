@@ -28,7 +28,14 @@ build:
 	mkdir -p build
 
 test: $(TESTS)
-	@for t in $(TESTS); do ./$$t || exit 1; done
+	@failed=0; \
+	for t in $(TESTS); do ./$$t || failed=1; done; \
+	exit $$failed
+
+test-%: build/%_test
+	./build/$*_test
+
+
 
 run: $(BIN)
 	/bin/sh -c "time ./$(BIN)"

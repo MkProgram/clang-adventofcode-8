@@ -10,12 +10,28 @@ void map_init(hash_map *map) {
   *map = (hash_map){slots, capacity, 0};
 }
 
-bool map_get(const hash_map *map, size_t key, size_t *out) {
+void map_init_with_size(hash_map *map, size_t size) {
+  hash_slot *slots = checked_calloc(size, sizeof(hash_slot));
+  *map = (hash_map){slots, size, 0};
+}
 
-  if (map->capacity == 0) {
-    fprintf(stderr, "hash_map has to be initialized first.\n");
-    exit(EXIT_FAILURE);
+static void grow(hash_map *map) {
+  hash_slot *grown = checked_calloc(map->capacity * 2, sizeof(hash_slot));
+  hash_map grown_map = {0};
+  map_init(&grown_map);
+  for (size_t i = 0; i < map->capacity; ++i) {
+    hash_slot current = map->slots[i];
+    if (!current.occupied) {
+      continue;
+    }
+    map_put(&grown_map, current.key, current.value);
   }
+  map_free(map);
+  map = &grown_map;
+}
+
+bool map_get(const hash_map *map, size_t key, size_t *out) {
+  assert("Map has to be initialized first" && map->capacity != 0);
   size_t start = key % map->capacity;
 
   for (size_t i = 0; i < map->capacity; ++i) {
@@ -35,33 +51,29 @@ bool map_get(const hash_map *map, size_t key, size_t *out) {
 }
 
 void map_put(hash_map *map, size_t key, size_t value) {
+  assert("Map has to be initialized first" && map->capacity != 0);
+  if (map->count >= map->capacity) {
+    assert("No slots available" && false);
+  }
+  if (map->count * 10 >= map->capacity * 7) {
+  }
+
   hash_slot slot = (hash_slot){key, value, true};
-
-  size_t target = key % map->capacity;
-
-  if (!map->slots[target].occupied) {
-    map->slots[target] = slot;
-    ++map->count;
-    return;
-  }
-
-  if (key == map->slots[target].key) {
-    map->slots[target].value = value;
-  }
+  size_t start = key % map->capacity;
 
   for (size_t i = 0; i < map->capacity; ++i) {
-    target = (target + i) % map->capacity;
-    if (!map->slots[target].occupied) {
-      map->slots[target] = slot;
+    size_t index = (start + i) % map->capacity;
+    if (!map->slots[index].occupied) {
+      map->slots[index] = slot;
       ++map->count;
       return;
     }
-    if (key == map->slots[target].key) {
-      map->slots[target].value = value;
+    if (key == map->slots[index].key) {
+      map->slots[index].value = value;
       return;
     }
   }
-  assert("No slots available" && true);
+  assert("No slots available" && false);
 }
 
 void map_free(hash_map *map) {
