@@ -15,6 +15,7 @@ typedef struct {
   size_t count;
 } hash_map;
 
+void map_init_with_size(hash_map *map, size_t size);
 void map_init(hash_map *map);
 void map_put(hash_map *map, size_t key, size_t value);
 bool map_get(const hash_map *map, size_t key, size_t *out);

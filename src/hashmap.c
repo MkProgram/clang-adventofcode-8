@@ -4,21 +4,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void map_init(hash_map *map) {
-  size_t capacity = 4;
-  hash_slot *slots = checked_calloc(capacity, sizeof(hash_slot));
-  *map = (hash_map){slots, capacity, 0};
-}
-
 void map_init_with_size(hash_map *map, size_t size) {
+  assert("Cannot initialize with a size of 0" && size != 0);
   hash_slot *slots = checked_calloc(size, sizeof(hash_slot));
   *map = (hash_map){slots, size, 0};
 }
 
+void map_init(hash_map *map) {
+  size_t size = 100;
+  map_init_with_size(map, size);
+}
+
 static void grow(hash_map *map) {
-  hash_slot *grown = checked_calloc(map->capacity * 2, sizeof(hash_slot));
+  const size_t capacity = map->capacity * 2;
   hash_map grown_map = {0};
-  map_init(&grown_map);
+  map_init_with_size(&grown_map, capacity);
   for (size_t i = 0; i < map->capacity; ++i) {
     hash_slot current = map->slots[i];
     if (!current.occupied) {
@@ -27,11 +27,18 @@ static void grow(hash_map *map) {
     map_put(&grown_map, current.key, current.value);
   }
   map_free(map);
-  map = &grown_map;
+  *map = grown_map;
+}
+
+static void check_initialized(const hash_map *map) {
+  if (map == NULL || map->capacity == 0 || map->slots == NULL) {
+    fprintf(stderr, "Map has to be initialized first\n");
+    abort();
+  }
 }
 
 bool map_get(const hash_map *map, size_t key, size_t *out) {
-  assert("Map has to be initialized first" && map->capacity != 0);
+  check_initialized(map);
   size_t start = key % map->capacity;
 
   for (size_t i = 0; i < map->capacity; ++i) {
@@ -51,13 +58,7 @@ bool map_get(const hash_map *map, size_t key, size_t *out) {
 }
 
 void map_put(hash_map *map, size_t key, size_t value) {
-  assert("Map has to be initialized first" && map->capacity != 0);
-  if (map->count >= map->capacity) {
-    assert("No slots available" && false);
-  }
-  if (map->count * 10 >= map->capacity * 7) {
-  }
-
+  check_initialized(map);
   hash_slot slot = (hash_slot){key, value, true};
   size_t start = key % map->capacity;
 
@@ -66,6 +67,9 @@ void map_put(hash_map *map, size_t key, size_t value) {
     if (!map->slots[index].occupied) {
       map->slots[index] = slot;
       ++map->count;
+      if (map->count * 10 >= map->capacity * 7) {
+        grow(map);
+      }
       return;
     }
     if (key == map->slots[index].key) {
