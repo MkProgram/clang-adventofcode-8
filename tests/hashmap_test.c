@@ -11,8 +11,8 @@ struct get_values {
 struct put_values {
   size_t key;
   size_t value;
-  size_t expected_slot;
   size_t expected_count;
+  size_t expected_capacity;
 };
 
 bool check_get(const hash_map *map, size_t key, size_t expected_val,
@@ -46,28 +46,27 @@ bool check_get(const hash_map *map, size_t key, size_t expected_val,
 
 size_t test_put(void) {
   hash_map map = {0};
-  map_init(&map);
+  map_init_with_size(&map, 4);
   struct put_values values[] = {
-      {1, 12, 1, 1},
-      {5, 15, 2, 2},
-      {9, 19, 3, 3},
-      {1, 99, 1, 3},
+      {1, 12, 1, 4},
+      {5, 15, 2, 4},
+      {9, 19, 3, 8},
+      {1, 99, 3, 8},
   };
 
   for (size_t i = 0; i < sizeof values / sizeof values[0]; ++i) {
     struct put_values current = values[i];
     map_put(&map, current.key, current.value);
-
-    if (map.slots[current.expected_slot].value != current.value ||
-        map.slots[current.expected_slot].key != current.key ||
-        map.count != current.expected_count) {
-      fprintf(
-          stderr,
-          "FAILURE: Expected value in slot %zu to match key %zu and value "
-          "%zu with a count of %zu, got key %zu and value %zu with count %zu\n",
-          current.expected_slot, current.key, current.value,
-          current.expected_count, map.slots[current.expected_slot].key,
-          map.slots[current.expected_slot].value, map.count);
+    if (map.count != current.expected_count) {
+      fprintf(stderr, "FAILURE: Expected a count of %zu, got %zu\n",
+              current.expected_count, map.count);
+      map_free(&map);
+      return 1;
+    }
+    if (map.capacity != current.expected_capacity) {
+      fprintf(stderr,
+              "FAILURE: Expected capacity of the map to be %zu, got %zu\n",
+              current.expected_capacity, map.capacity);
       map_free(&map);
       return 1;
     }
@@ -98,18 +97,21 @@ size_t test_put(void) {
 
 size_t test_map_get(void) {
   hash_map map = {0};
-  map_init(&map);
+  map_init_with_size(&map, 4);
 
   // First three values are used to fill the slots, the ones after are used to
   // test behaviour for calling empty keys
-  struct get_values values[] = {{3, 5, true},   {7, 16, true}, {11, 12, true},
-                                {12, 0, false}, {2, 0, false}, {0, 0, false}};
+  struct get_values values[] = {
+      {3, 5, true},   {7, 16, true}, {11, 12, true},
+      {12, 0, false}, {2, 0, false}, {0, 0, false},
+  };
 
   size_t slots[] = {3, 0, 1};
 
   for (size_t i = 0; i < sizeof slots / sizeof slots[0]; ++i) {
     map.slots[slots[i]] = (hash_slot){values[i].key, values[i].value, true};
   }
+  map.count = sizeof slots / sizeof slots[0];
 
   for (size_t i = 0; i < sizeof values / sizeof values[0]; ++i) {
     if (!check_get(&map, values[i].key, values[i].value, values[i].found)) {

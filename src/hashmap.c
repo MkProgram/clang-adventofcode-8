@@ -5,7 +5,14 @@
 #include <stdlib.h>
 
 void map_init_with_size(hash_map *map, size_t size) {
-  assert("Cannot initialize with a size of 0" && size != 0);
+  if (size == 0) {
+    fprintf(stderr, "Map cannot be initialized with size of 0\n");
+    abort();
+  }
+  if (map == NULL) {
+    fprintf(stderr, "Map cannot be null\n");
+    abort();
+  }
   hash_slot *slots = checked_calloc(size, sizeof(hash_slot));
   *map = (hash_map){slots, size, 0};
 }
