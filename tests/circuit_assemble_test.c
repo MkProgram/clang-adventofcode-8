@@ -17,7 +17,7 @@ size_t test_example_file(void) {
     return 1;
   }
 
-  size_t actual = assemble_circuit(file);
+  size_t actual = assemble_circuit(file, 10);
   if (actual != expected) {
     fprintf(stderr, "FAILURE: Example File: Expected %zu, got %zu.\n", expected,
             actual);
@@ -35,5 +35,5 @@ int main(void) {
   if (failures == 0) {
     return EXIT_SUCCESS;
   }
-  // return EXIT_FAILURE;
+  return EXIT_FAILURE;
 }
