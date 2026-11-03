@@ -1,4 +1,5 @@
 #include "circuit_assemble.h"
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -11,8 +12,10 @@ int main(void) {
     fprintf(stderr, "File could not be opened: %s\n", floc);
     return EXIT_FAILURE;
   }
-  size_t result = assemble_circuit(file, 1000);
+  uint64_t part2 = 0;
+  size_t result = assemble_circuit(file, 1000, &part2);
   printf("Combined circuits = %zu\n", result);
+  printf("Result for part 2 is: %" PRIu64 "\n", part2);
 
   fclose(file);
 

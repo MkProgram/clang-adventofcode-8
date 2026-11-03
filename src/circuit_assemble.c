@@ -164,9 +164,8 @@ bool assign_group(hash_map *map, size_t point_count,
   return true;
 }
 
-void connect_boxes(const Vec *v, const size_t count, size_t *result) {
-  Vec found_pairs = {0};
-  vec_init(&found_pairs, sizeof(struct COOR_PAIR));
+void connect_boxes(const Vec *v, const size_t count, size_t *part1,
+                   uint64_t *part2) {
   hash_map map = {0};
   map_init(&map);
 
@@ -210,7 +209,7 @@ void connect_boxes(const Vec *v, const size_t count, size_t *result) {
     bool merged = assign_group(&map, point_count, &pairs[i]);
 
     if (i + 1 == count) {
-      *result = calculate_circuits(&map, point_count);
+      *part1 = calculate_circuits(&map, point_count);
     }
 
     if (!merged) {
@@ -225,25 +224,23 @@ void connect_boxes(const Vec *v, const size_t count, size_t *result) {
       vec_get(v, pairs[i].a, &a);
       vec_get(v, pairs[i].b, &b);
 
-      uint64_t calc = (uint64_t)a.x * (uint64_t)b.x;
-      printf("Last connection calculated: %" PRIu64 "\n", calc);
+      *part2 = (uint64_t)a.x * (uint64_t)b.x;
     }
   }
 
   free(pairs);
   map_free(&map);
-  vec_free(&found_pairs);
 }
 
-size_t assemble_circuit(FILE *file, size_t count) {
-  size_t circuit_sum = 0;
+size_t assemble_circuit(FILE *file, size_t count, uint64_t *part2) {
+  size_t part1 = 0;
   Vec v = {0};
   vec_init(&v, sizeof(Coordinates));
 
   process_lines(file, &v);
-  connect_boxes(&v, count, &circuit_sum);
+  connect_boxes(&v, count, &part1, part2);
 
   vec_free(&v);
 
-  return circuit_sum;
+  return part1;
 }
