@@ -33,6 +33,7 @@ int main(void) {
 
   failures += test_example_file();
   if (failures == 0) {
+    printf("Tests completed\n");
     return EXIT_SUCCESS;
   }
   return EXIT_FAILURE;
