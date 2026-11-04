@@ -4,10 +4,12 @@ SANFLAGS := -fsanitize=address,undefined
 
 BIN_NAME := main
 BIN := build/$(BIN_NAME)
+DSU_BIN_NAME := main_dsu
+DSU_BIN := build/$(DSU_BIN_NAME)
 
 SRCS := $(wildcard src/*.c)
-MAIN_SRC := src/$(BIN_NAME).c
-LIB_SRCS := $(filter-out $(MAIN_SRC), $(SRCS))
+MAIN_SRCS := src/$(BIN_NAME).c src/$(DSU_BIN_NAME).c
+LIB_SRCS := $(filter-out $(MAIN_SRCS), $(SRCS))
 LIB_OBJS := $(patsubst src/%.c,build/%.o,$(LIB_SRCS))
 
 TEST_SRCS := $(wildcard tests/*.c)
@@ -16,6 +18,9 @@ TESTS := $(patsubst tests/%.c,build/%,$(TEST_SRCS))
 all: $(BIN)
 
 $(BIN): build/$(BIN_NAME).o $(LIB_OBJS)
+	$(CC) $(CFLAGS) $(SANFLAGS) -o $@ $^
+
+$(DSU_BIN): build/$(DSU_BIN_NAME).o $(LIB_OBJS)
 	$(CC) $(CFLAGS) $(SANFLAGS) -o $@ $^
 
 build/%.o: src/%.c | build
@@ -40,6 +45,9 @@ test-%: build/%_test
 run: $(BIN)
 	/bin/sh -c "time ./$(BIN)"
 
+run-dsu: $(DSU_BIN)
+	/bin/sh -c "time ./$(DSU_BIN)"
+
 clean: 
 	rm -rf build/*
-.PHONY: all run clean test
+.PHONY: all run run-dsu clean test
